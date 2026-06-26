@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Cambria", "Georgia", serif;
+  --font-body:    "Inter", "Calibri", system-ui, sans-serif;
+}
+
+/* Base */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: #F7F3EC;
+  color: #3B2A1A;
+  font-family: var(--font-body);
+}
+
+/* Safe area for mobile bottom nav */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Park card hover animation */
+@media (prefers-reduced-motion: no-preference) {
+  .park-card-img {
+    transition: transform 300ms ease;
+  }
+  .park-card:hover .park-card-img {
+    transform: scale(1.02);
+  }
+}
+
+/* Skeleton loading animation */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e8e3da 25%, #f0ebe2 50%, #e8e3da 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
