@@ -14,7 +14,7 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
-const PLACE_ID = "ChIJNWPHfHFzhlQRFJBGFhGEEn0"; // Trout Lake Park, Vancouver
+const PLACE_ID = "ChIJNTdgR7N2hlQRsGx3wkOQ0sk"; // Trout Lake Park, Vancouver
 
 const FIELDS = [
   "id",
