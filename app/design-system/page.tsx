@@ -51,17 +51,20 @@ export default function DesignSystemPage() {
       <Section title="Colour Palette">
         <div className="flex flex-wrap gap-3">
           {[
-            ["bg-canopy",    "Canopy",    "#2D5A27"],
-            ["bg-leaf",      "Leaf",      "#5A8F3C"],
-            ["bg-meadow",    "Meadow",    "#A8C97F"],
-            ["bg-sun",       "Sun",       "#E8A020"],
-            ["bg-bark",      "Bark",      "#3B2A1A"],
-            ["bg-soil",      "Soil",      "#1C1610"],
-            ["bg-sky",       "Sky",       "#D4EAF7"],
-            ["bg-parchment border border-meadow/30", "Parchment", "#F7F3EC"],
-          ].map(([cls, name, hex]) => (
+            ["Canopy",    "#2D5A27"],
+            ["Leaf",      "#5A8F3C"],
+            ["Meadow",    "#A8C97F"],
+            ["Sun",       "#E8A020"],
+            ["Bark",      "#3B2A1A"],
+            ["Soil",      "#1C1610"],
+            ["Sky",       "#D4EAF7"],
+            ["Parchment", "#F7F3EC"],
+          ].map(([name, hex]) => (
             <div key={name} className="flex flex-col items-center gap-1.5">
-              <div className={`${cls} h-14 w-14 rounded-xl`} />
+              <div
+                className="h-14 w-14 rounded-xl border border-bark/10"
+                style={{ backgroundColor: hex }}
+              />
               <p className="text-xs font-body text-bark font-medium">{name}</p>
               <p className="text-2xs font-mono text-bark/40">{hex}</p>
             </div>
