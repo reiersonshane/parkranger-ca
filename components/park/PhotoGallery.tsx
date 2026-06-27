@@ -3,19 +3,16 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { GoogleParkPhoto } from "@/types";
-import { buildPhotoUrl } from "@/lib/utils";
-
 interface PhotoGalleryProps {
-  photos: GoogleParkPhoto[];
+  photoUrls: string[];
   parkName: string;
 }
 
-export function PhotoGallery({ photos, parkName }: PhotoGalleryProps) {
+export function PhotoGallery({ photoUrls, parkName }: PhotoGalleryProps) {
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
-  const displayed = photos.slice(0, 5);
+  const displayed = photoUrls;
 
   if (displayed.length === 0) {
     return (
@@ -42,8 +39,7 @@ export function PhotoGallery({ photos, parkName }: PhotoGalleryProps) {
     touchStartX.current = null;
   }
 
-  const photo = displayed[current];
-  const url = buildPhotoUrl(photo.name, 1200);
+  const url = displayed[current];
 
   return (
     <div

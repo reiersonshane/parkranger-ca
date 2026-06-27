@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, ExternalLink, TreePine } from "lucide-react";
 import { fetchParkByPlaceId } from "@/lib/google/places";
+import { buildPhotoUrl } from "@/lib/utils";
 import { StarRating } from "@/components/ui/StarRating";
 import { AmenityBadgeList } from "@/components/ui/AmenityBadge";
 import { PhotoGallery } from "@/components/park/PhotoGallery";
@@ -37,12 +38,16 @@ export default async function ParkDetailPage(
   if (!park) notFound();
 
   const hours = park.currentOpeningHours ?? park.regularOpeningHours;
+
+  // Build photo URLs server-side using the server key (browser key lacks Places API)
+  const serverKey = process.env.GOOGLE_PLACES_API_KEY;
+  const photoUrls = (park.photos ?? [])
+    .slice(0, 5)
+    .map((p) => buildPhotoUrl(p.name, 1200, serverKey));
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     park.displayName.text
   )}&query_place_id=${placeId}`;
 
-  // Use server key for static map — no referrer restrictions, never exposed to client
-  const serverKey = process.env.GOOGLE_PLACES_API_KEY;
   const staticMapUrl = serverKey
     ? `https://maps.googleapis.com/maps/api/staticmap?center=${park.location.latitude},${park.location.longitude}&zoom=15&size=800x400&scale=2&markers=color:0x2D5A27%7C${park.location.latitude},${park.location.longitude}&key=${serverKey}`
     : null;
@@ -50,7 +55,7 @@ export default async function ParkDetailPage(
   return (
     <div className="max-w-3xl mx-auto pb-16">
       {/* Photo gallery */}
-      <PhotoGallery photos={park.photos ?? []} parkName={park.displayName.text} />
+      <PhotoGallery photoUrls={photoUrls} parkName={park.displayName.text} />
 
       {/* Main content */}
       <div className="px-4 pt-6 space-y-6">

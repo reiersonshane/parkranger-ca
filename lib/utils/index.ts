@@ -104,6 +104,7 @@ export function formatEventDate(dateStr: string): string {
 
 // ─── Google photo URL builder ─────────────────────────────────────────────────
 
-export function buildPhotoUrl(photoName: string, maxWidth = 800): string {
-  return `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=${maxWidth}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
+export function buildPhotoUrl(photoName: string, maxWidth = 800, apiKey?: string): string {
+  const key = apiKey ?? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  return `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=${maxWidth}&key=${key}`;
 }
