@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
         hostname: "maps.googleapis.com",
       },
       {
+        protocol: "https",
+        hostname: "places.googleapis.com",
+      },
+      {
         // Supabase storage
         protocol: "https",
         hostname: "*.supabase.co",
