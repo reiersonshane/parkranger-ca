@@ -15,7 +15,7 @@ const PLACES_BASE = "https://places.googleapis.com/v1";
 // Fields we request — keeping this minimal to stay in free tier
 // Basic Data (free): displayName, id, types, formattedAddress, location
 // Advanced (billed): photos, rating, regularOpeningHours, editorialSummary
-const PLACE_FIELDS = [
+const PLACE_FIELD_LIST = [
   "id",
   "displayName",
   "formattedAddress",
@@ -29,7 +29,12 @@ const PLACE_FIELDS = [
   "editorialSummary",
   "websiteUri",
   "nationalPhoneNumber",
-].join(",");
+];
+
+// For single-place requests (GET /places/{id})
+const PLACE_FIELDS = PLACE_FIELD_LIST.join(",");
+// For collection requests (searchNearby, searchText) each field needs the "places." prefix
+const COLLECTION_FIELDS = PLACE_FIELD_LIST.map((f) => `places.${f}`).join(",");
 
 function apiKey(): string {
   const key = process.env.GOOGLE_PLACES_API_KEY;
@@ -88,7 +93,7 @@ export async function fetchNearbyParks(
       headers: {
         "Content-Type":     "application/json",
         "X-Goog-Api-Key":   apiKey(),
-        "X-Goog-FieldMask": `places.${PLACE_FIELDS}`,
+        "X-Goog-FieldMask": COLLECTION_FIELDS,
       },
       body: JSON.stringify(body),
       next: { revalidate: 300 }, // 5 minute cache
@@ -134,7 +139,7 @@ export async function searchParks(query: string, locationBias?: {
       headers: {
         "Content-Type":     "application/json",
         "X-Goog-Api-Key":   apiKey(),
-        "X-Goog-FieldMask": `places.${PLACE_FIELDS}`,
+        "X-Goog-FieldMask": COLLECTION_FIELDS,
       },
       body: JSON.stringify(body),
       next: { revalidate: 300 },

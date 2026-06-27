@@ -1,7 +1,13 @@
 import Link from "next/link";
-import { Search, Map, TreePine } from "lucide-react";
+import { Search, Map } from "lucide-react";
+import { fetchNearbyParks } from "@/lib/google/places";
+import { NearbyParksSection } from "@/components/park/NearbyParksSection";
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Fetch featured Vancouver parks server-side (used as fallback if no geolocation)
+  const featuredParks = await fetchNearbyParks(49.2577, -123.1207, 8000);
+  const displayParks = featuredParks.slice(0, 6);
+
   return (
     <div>
       {/* Hero */}
@@ -18,7 +24,7 @@ export default function HomePage() {
           </p>
 
           {/* Search */}
-          <form action="/search" className="flex gap-2 max-w-md mx-auto">
+          <form action="/search" method="get" className="flex gap-2 max-w-md mx-auto">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-bark/40" />
               <input
@@ -46,57 +52,48 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="max-w-5xl mx-auto px-4 py-16">
-        <h2 className="font-display text-2xl font-bold text-bark text-center mb-10">
-          More than a map
-        </h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            {
-              icon: "🗺️",
-              title: "Find parks near you",
-              body: "Browse an interactive map, filter by amenities — washrooms, dog-friendly, sports fields, playgrounds — and see what&apos;s open right now.",
-            },
-            {
-              icon: "👋",
-              title: "Check in & be seen",
-              body: "Tap &apos;I&apos;m here now&apos; when you arrive. See who else is at the park. Regulars make plans. Strangers become neighbours.",
-            },
-            {
-              icon: "📅",
-              title: "Post & find events",
-              body: "From beer league sign-ups to weekly dog walks — community events live on the park page where people actually look.",
-            },
-          ].map((item) => (
-            <div key={item.title} className="bg-white rounded-2xl p-6 border border-meadow/20 shadow-park">
-              <div className="text-3xl mb-4">{item.icon}</div>
-              <h3 className="font-display font-bold text-bark text-lg mb-2">{item.title}</h3>
-              <p
-                className="text-bark/60 font-body text-sm leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: item.body }}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Parks grid — nearby via geolocation, falls back to featured Vancouver */}
+      <NearbyParksSection featuredParks={displayParks} />
 
-      {/* CTA */}
-      <section className="bg-parchment border-t border-meadow/20 px-4 py-16 text-center">
-        <TreePine className="h-10 w-10 text-canopy mx-auto mb-4" />
-        <h2 className="font-display text-2xl font-bold text-bark mb-3">
-          Your park is waiting
-        </h2>
-        <p className="text-bark/60 font-body mb-6 max-w-sm mx-auto">
-          Explore parks in your city and see what&apos;s happening today.
-        </p>
-        <Link
-          href="/map"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-canopy text-white font-body font-semibold rounded-xl hover:bg-canopy/90 transition-colors"
-        >
-          <Map className="h-4 w-4" />
-          Open the map
-        </Link>
+      {/* How it works */}
+      <section className="bg-parchment border-t border-meadow/20 px-4 py-16">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="font-display text-2xl font-bold text-bark text-center mb-10">
+            More than a map
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: "🗺️",
+                title: "Find parks near you",
+                body: "Browse an interactive map, filter by amenities — washrooms, dog-friendly, sports fields, playgrounds — and see what's open right now.",
+              },
+              {
+                icon: "👋",
+                title: "Check in & be seen",
+                body: "Tap 'I'm here now' when you arrive. See who else is at the park. Regulars make plans. Strangers become neighbours.",
+              },
+              {
+                icon: "📅",
+                title: "Post & find events",
+                body: "From beer league sign-ups to weekly dog walks — community events live on the park page where people actually look.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="bg-white rounded-2xl p-6 border border-meadow/20 shadow-park"
+              >
+                <div className="text-3xl mb-4">{item.icon}</div>
+                <h3 className="font-display font-bold text-bark text-lg mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-bark/60 font-body text-sm leading-relaxed">
+                  {item.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
     </div>
   );
