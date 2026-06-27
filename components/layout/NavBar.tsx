@@ -1,12 +1,17 @@
 import Link from "next/link";
-import { Search, Map, Heart, User } from "lucide-react";
+import { Search, Map, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/server";
 
 interface NavBarProps {
   className?: string;
 }
 
-export function NavBar({ className }: NavBarProps) {
+export async function NavBar({ className }: NavBarProps) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+
   return (
     <header className={cn(
       "sticky top-0 z-50 w-full bg-canopy/95 backdrop-blur-sm border-b border-white/10",
@@ -46,11 +51,16 @@ export function NavBar({ className }: NavBarProps) {
             <Search className="h-5 w-5" />
           </Link>
           <Link
-            href="/profile"
-            className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-            aria-label="Profile"
+            href={user ? "/profile" : "/login"}
+            className="p-1.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label={user ? "Profile" : "Sign in"}
           >
-            <User className="h-5 w-5" />
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="Profile" className="h-7 w-7 rounded-full object-cover" />
+            ) : (
+              <User className="h-5 w-5" />
+            )}
           </Link>
         </div>
       </div>
@@ -62,10 +72,10 @@ export function NavBar({ className }: NavBarProps) {
 
 export function MobileBottomNav() {
   const items = [
-    { href: "/",        icon: "🏠", label: "Home"   },
-    { href: "/map",     icon: "🗺️", label: "Map"    },
-    { href: "/profile", icon: "❤️", label: "Saved"  },
-    { href: "/profile", icon: "👤", label: "Profile" },
+    { href: "/",        icon: "🏠", label: "Home"    },
+    { href: "/map",     icon: "🗺️", label: "Map"     },
+    { href: "/profile", icon: "❤️", label: "Saved"   },
+    { href: "/profile", icon: "👤", label: "Profile"  },
   ];
 
   return (
