@@ -41,9 +41,10 @@ export default async function ParkDetailPage(
     park.displayName.text
   )}&query_place_id=${placeId}`;
 
-  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const staticMapUrl = mapsApiKey
-    ? `https://maps.googleapis.com/maps/api/staticmap?center=${park.location.latitude},${park.location.longitude}&zoom=15&size=800x400&scale=2&markers=color:0x2D5A27%7C${park.location.latitude},${park.location.longitude}&key=${mapsApiKey}`
+  // Use server key for static map — no referrer restrictions, never exposed to client
+  const serverKey = process.env.GOOGLE_PLACES_API_KEY;
+  const staticMapUrl = serverKey
+    ? `https://maps.googleapis.com/maps/api/staticmap?center=${park.location.latitude},${park.location.longitude}&zoom=15&size=800x400&scale=2&markers=color:0x2D5A27%7C${park.location.latitude},${park.location.longitude}&key=${serverKey}`
     : null;
 
   return (
