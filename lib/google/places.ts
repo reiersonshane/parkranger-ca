@@ -9,6 +9,7 @@
 
 import type { GooglePark, ParkSummary } from "@/types";
 import { parseAmenities, buildPhotoUrl } from "@/lib/utils";
+import { cacheGet, cacheSet } from "@/lib/redis";
 
 const PLACES_BASE = "https://places.googleapis.com/v1";
 
@@ -45,13 +46,17 @@ function apiKey(): string {
 // ─── Fetch a single park by Place ID ─────────────────────────────────────────
 
 export async function fetchParkByPlaceId(placeId: string): Promise<GooglePark | null> {
+  const cacheKey = `park:${placeId}`;
+  const cached = await cacheGet<GooglePark>(cacheKey);
+  if (cached) return cached;
+
   try {
     const res = await fetch(`${PLACES_BASE}/places/${placeId}`, {
       headers: {
         "X-Goog-Api-Key":    apiKey(),
         "X-Goog-FieldMask":  PLACE_FIELDS,
       },
-      next: { revalidate: 600 }, // 10 minute Next.js cache
+      next: { revalidate: 600 },
     });
 
     if (res.status === 404) return null;
@@ -62,6 +67,7 @@ export async function fetchParkByPlaceId(placeId: string): Promise<GooglePark | 
 
     const data: GooglePark = await res.json();
     data.amenities = parseAmenities(data.types ?? []);
+    await cacheSet(cacheKey, data, 600);
     return data;
   } catch (err) {
     console.error("fetchParkByPlaceId failed:", err);
@@ -76,6 +82,11 @@ export async function fetchNearbyParks(
   lng: number,
   radiusMeters = 2000
 ): Promise<ParkSummary[]> {
+  // Round to ~100m grid to maximise cache hits
+  const cacheKey = `nearby:${lat.toFixed(3)}:${lng.toFixed(3)}:${radiusMeters}`;
+  const cached = await cacheGet<ParkSummary[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     const body = {
       includedTypes: ["park"],
@@ -105,7 +116,9 @@ export async function fetchNearbyParks(
     }
 
     const data: { places?: GooglePark[] } = await res.json();
-    return (data.places ?? []).map(googleParkToSummary);
+    const results = (data.places ?? []).map(googleParkToSummary);
+    await cacheSet(cacheKey, results, 300);
+    return results;
   } catch (err) {
     console.error("fetchNearbyParks failed:", err);
     return [];
@@ -118,6 +131,10 @@ export async function searchParks(query: string, locationBias?: {
   lat: number;
   lng: number;
 }): Promise<ParkSummary[]> {
+  const cacheKey = `search:${query.toLowerCase().trim()}`;
+  const cached = await cacheGet<ParkSummary[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     const body: Record<string, unknown> = {
       textQuery: query,
@@ -151,7 +168,9 @@ export async function searchParks(query: string, locationBias?: {
     }
 
     const data: { places?: GooglePark[] } = await res.json();
-    return (data.places ?? []).map(googleParkToSummary);
+    const results = (data.places ?? []).map(googleParkToSummary);
+    await cacheSet(cacheKey, results, 300);
+    return results;
   } catch (err) {
     console.error("searchParks failed:", err);
     return [];
