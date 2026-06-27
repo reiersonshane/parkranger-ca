@@ -162,13 +162,15 @@ export async function searchParks(query: string, locationBias?: {
 
 export function googleParkToSummary(park: GooglePark): ParkSummary {
   const firstPhoto = park.photos?.[0];
+  // Always use the server key here — this function only runs server-side
+  const key = process.env.GOOGLE_PLACES_API_KEY;
   return {
     placeId:     park.id,
     name:        park.displayName.text,
     address:     park.formattedAddress,
     rating:      park.rating,
     ratingCount: park.userRatingCount,
-    photoUrl:    firstPhoto ? buildPhotoUrl(firstPhoto.name, 600) : undefined,
+    photoUrl:    firstPhoto ? buildPhotoUrl(firstPhoto.name, 600, key) : undefined,
     location: {
       lat: park.location.latitude,
       lng: park.location.longitude,
