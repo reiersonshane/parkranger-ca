@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { MapPin, ExternalLink, TreePine } from "lucide-react";
 import { fetchParkByPlaceId } from "@/lib/google/places";
 import { StarRating } from "@/components/ui/StarRating";
@@ -40,9 +41,9 @@ export default async function ParkDetailPage(
     park.displayName.text
   )}&query_place_id=${placeId}`;
 
-  const embedKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const embedSrc = embedKey
-    ? `https://www.google.com/maps/embed/v1/place?key=${embedKey}&q=place_id:${placeId}`
+  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const staticMapUrl = mapsApiKey
+    ? `https://maps.googleapis.com/maps/api/staticmap?center=${park.location.latitude},${park.location.longitude}&zoom=15&size=800x400&scale=2&markers=color:0x2D5A27%7C${park.location.latitude},${park.location.longitude}&key=${mapsApiKey}`
     : null;
 
   return (
@@ -111,24 +112,26 @@ export default async function ParkDetailPage(
         {/* Divider */}
         <div className="h-px bg-meadow/20" />
 
-        {/* Embedded map */}
-        {embedSrc ? (
+        {/* Static map */}
+        {staticMapUrl ? (
           <div>
             <h2 className="font-display font-semibold text-bark mb-3">
               Location
             </h2>
-            <div className="rounded-2xl overflow-hidden border border-meadow/20 aspect-video">
-              <iframe
-                src={embedSrc}
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title={`Map of ${park.displayName.text}`}
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-2xl overflow-hidden border border-meadow/20 hover:opacity-90 transition-opacity"
+            >
+              <Image
+                src={staticMapUrl}
+                alt={`Map of ${park.displayName.text}`}
+                width={800}
+                height={400}
+                className="w-full"
               />
-            </div>
+            </a>
           </div>
         ) : (
           <div className="rounded-2xl bg-meadow/10 p-6 text-center">
