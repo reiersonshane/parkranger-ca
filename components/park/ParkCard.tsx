@@ -4,15 +4,18 @@ import { MapPin, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StarRating } from "@/components/ui/StarRating";
 import { AmenityBadgeList } from "@/components/ui/AmenityBadge";
+import { SaveButton } from "@/components/park/SaveButton";
 import type { ParkSummary } from "@/types";
 
 interface ParkCardProps {
   park: ParkSummary;
   variant?: "default" | "compact" | "horizontal";
+  isSaved?: boolean;
+  isLoggedIn?: boolean;
   className?: string;
 }
 
-export function ParkCard({ park, variant = "default", className }: ParkCardProps) {
+export function ParkCard({ park, variant = "default", isSaved = false, isLoggedIn = false, className }: ParkCardProps) {
   const href = `/parks/${park.placeId}`;
 
   if (variant === "compact") {
@@ -118,12 +121,15 @@ export function ParkCard({ park, variant = "default", className }: ParkCardProps
             {park.isOpen ? "Open now" : "Closed"}
           </div>
         )}
-        {park.checkinCount !== undefined && park.checkinCount > 0 && (
-          <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-sun/90 text-bark text-xs font-semibold">
-            <Users className="h-3 w-3" />
-            {park.checkinCount}
-          </div>
-        )}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          {park.checkinCount !== undefined && park.checkinCount > 0 && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-sun/90 text-bark text-xs font-semibold">
+              <Users className="h-3 w-3" />
+              {park.checkinCount}
+            </div>
+          )}
+          <SaveButton placeId={park.placeId} initialIsSaved={isSaved} isLoggedIn={isLoggedIn} size="sm" />
+        </div>
       </div>
 
       <div className="p-4 flex flex-col gap-2">

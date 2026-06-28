@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Search } from "lucide-react";
 import { searchParks } from "@/lib/google/places";
+import { createClient } from "@/lib/supabase/server";
 import { ParkCard } from "@/components/park/ParkCard";
 
 export const metadata: Metadata = {
@@ -11,7 +12,17 @@ export const metadata: Metadata = {
 export default async function SearchPage(props: PageProps<"/search">) {
   const { q } = await props.searchParams;
   const query = typeof q === "string" ? q.trim() : "";
-  const results = query ? await searchParks(query) : [];
+
+  const [results, supabase] = await Promise.all([
+    query ? searchParks(query) : Promise.resolve([]),
+    createClient(),
+  ]);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: savedData } = user
+    ? await supabase.from("saved_parks").select("google_place_id").eq("user_id", user.id)
+    : { data: [] };
+  const savedSet = new Set((savedData ?? []).map((s) => s.google_place_id));
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -52,7 +63,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
           {results.length > 0 && (
             <div className="space-y-3">
               {results.map((park) => (
-                <ParkCard key={park.placeId} park={park} variant="horizontal" />
+                <ParkCard key={park.placeId} park={park} variant="horizontal" isSaved={savedSet.has(park.placeId)} isLoggedIn={!!user} />
               ))}
             </div>
           )}

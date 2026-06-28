@@ -12,6 +12,7 @@ import { PhotoGallery } from "@/components/park/PhotoGallery";
 import { HoursAccordion } from "@/components/park/HoursAccordion";
 import { CheckInSection } from "@/components/park/CheckInSection";
 import { EventsSection } from "@/components/park/EventsSection";
+import { SaveButton } from "@/components/park/SaveButton";
 
 export async function generateMetadata(
   props: PageProps<"/parks/[placeId]">
@@ -57,6 +58,11 @@ export default async function ParkDetailPage(
   const activeCheckins = checkins ?? [];
   const isCheckedIn = !!user && activeCheckins.some((c) => c.user_id === user.id);
 
+  const { data: savedData } = user
+    ? await supabase.from("saved_parks").select("google_place_id").eq("user_id", user.id).eq("google_place_id", placeId).maybeSingle()
+    : { data: null };
+  const isSaved = !!savedData;
+
   // Fetch upcoming events
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { data: events } = await supabase
@@ -90,9 +96,12 @@ export default async function ParkDetailPage(
       <div className="px-4 pt-6 space-y-6">
         {/* Name + rating */}
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-bark leading-tight">
-            {park.displayName.text}
-          </h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="font-display text-2xl md:text-3xl font-bold text-bark leading-tight">
+              {park.displayName.text}
+            </h1>
+            <SaveButton placeId={placeId} initialIsSaved={isSaved} isLoggedIn={!!user} className="shrink-0 mt-1" />
+          </div>
           <div className="flex flex-wrap items-center gap-3 mt-2">
             {park.rating && (
               <StarRating

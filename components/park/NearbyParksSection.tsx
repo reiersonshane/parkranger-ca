@@ -8,11 +8,14 @@ import type { ParkSummary } from "@/types";
 
 interface NearbyParksSectionProps {
   featuredParks: ParkSummary[];
+  savedPlaceIds?: string[];
+  isLoggedIn?: boolean;
 }
 
 type State = "idle" | "locating" | "loading" | "done" | "denied";
 
-export function NearbyParksSection({ featuredParks }: NearbyParksSectionProps) {
+export function NearbyParksSection({ featuredParks, savedPlaceIds = [], isLoggedIn = false }: NearbyParksSectionProps) {
+  const savedSet = new Set(savedPlaceIds);
   const [state, setState] = useState<State>("idle");
   const [nearbyParks, setNearbyParks] = useState<ParkSummary[]>([]);
 
@@ -62,7 +65,7 @@ export function NearbyParksSection({ featuredParks }: NearbyParksSectionProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {parks.map((park) => (
-          <ParkCard key={park.placeId} park={park} />
+          <ParkCard key={park.placeId} park={park} isSaved={savedSet.has(park.placeId)} isLoggedIn={isLoggedIn} />
         ))}
       </div>
     </section>

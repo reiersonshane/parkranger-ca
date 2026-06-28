@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { Search, Map } from "lucide-react";
 import { fetchNearbyParks } from "@/lib/google/places";
+import { createClient } from "@/lib/supabase/server";
 import { NearbyParksSection } from "@/components/park/NearbyParksSection";
 
 export default async function HomePage() {
-  // Fetch featured Vancouver parks server-side (used as fallback if no geolocation)
-  const featuredParks = await fetchNearbyParks(49.2577, -123.1207, 8000);
+  const [featuredParks, supabase] = await Promise.all([
+    fetchNearbyParks(49.2577, -123.1207, 8000),
+    createClient(),
+  ]);
   const displayParks = featuredParks.slice(0, 6);
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: savedData } = user
+    ? await supabase.from("saved_parks").select("google_place_id").eq("user_id", user.id)
+    : { data: [] };
+  const savedPlaceIds = (savedData ?? []).map((s) => s.google_place_id);
 
   return (
     <div>
@@ -53,7 +62,7 @@ export default async function HomePage() {
       </section>
 
       {/* Parks grid — nearby via geolocation, falls back to featured Vancouver */}
-      <NearbyParksSection featuredParks={displayParks} />
+      <NearbyParksSection featuredParks={displayParks} savedPlaceIds={savedPlaceIds} isLoggedIn={!!user} />
 
       {/* How it works */}
       <section className="bg-parchment border-t border-meadow/20 px-4 py-16">
