@@ -5,10 +5,12 @@ import Image from "next/image";
 import { MapPin, ExternalLink, TreePine } from "lucide-react";
 import { fetchParkByPlaceId } from "@/lib/google/places";
 import { buildPhotoUrl } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/server";
 import { StarRating } from "@/components/ui/StarRating";
 import { AmenityBadgeList } from "@/components/ui/AmenityBadge";
 import { PhotoGallery } from "@/components/park/PhotoGallery";
 import { HoursAccordion } from "@/components/park/HoursAccordion";
+import { CheckInSection } from "@/components/park/CheckInSection";
 
 export async function generateMetadata(
   props: PageProps<"/parks/[placeId]">
@@ -33,11 +35,26 @@ export default async function ParkDetailPage(
   props: PageProps<"/parks/[placeId]">
 ) {
   const { placeId } = await props.params;
-  const park = await fetchParkByPlaceId(placeId);
+  const [park, supabase] = await Promise.all([
+    fetchParkByPlaceId(placeId),
+    createClient(),
+  ]);
 
   if (!park) notFound();
 
   const hours = park.currentOpeningHours ?? park.regularOpeningHours;
+
+  // Fetch active checkins + current user in parallel
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: checkins } = await supabase
+    .from("checkins")
+    .select("id, user_id, profiles(display_name, avatar_url)")
+    .eq("park_id", placeId)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false });
+
+  const activeCheckins = checkins ?? [];
+  const isCheckedIn = !!user && activeCheckins.some((c) => c.user_id === user.id);
 
   // Build photo URLs server-side using the server key (browser key lacks Places API)
   const serverKey = process.env.GOOGLE_PLACES_API_KEY;
@@ -89,6 +106,14 @@ export default async function ParkDetailPage(
           <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-bark/40" />
           <p className="font-body text-sm">{park.formattedAddress}</p>
         </div>
+
+        {/* Check-in */}
+        <CheckInSection
+          placeId={placeId}
+          initialCheckins={activeCheckins as unknown as Parameters<typeof CheckInSection>[0]["initialCheckins"]}
+          initialIsCheckedIn={isCheckedIn}
+          isLoggedIn={!!user}
+        />
 
         {/* Hours */}
         {hours && <HoursAccordion hours={hours} />}
