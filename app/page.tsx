@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Search, Map } from "lucide-react";
-import { fetchNearbyParks } from "@/lib/google/places";
+import { fetchNearbyParks, fetchParkByPlaceId, googleParkToSummary } from "@/lib/google/places";
 import { createClient } from "@/lib/supabase/server";
 import { NearbyParksSection } from "@/components/park/NearbyParksSection";
+import { ActivityFeed } from "@/components/feed/ActivityFeed";
 
 export default async function HomePage() {
   const [featuredParks, supabase] = await Promise.all([
@@ -13,9 +14,16 @@ export default async function HomePage() {
 
   const { data: { user } } = await supabase.auth.getUser();
   const { data: savedData } = user
-    ? await supabase.from("saved_parks").select("google_place_id").eq("user_id", user.id)
+    ? await supabase.from("saved_parks").select("google_place_id").eq("user_id", user.id).limit(6)
     : { data: [] };
   const savedPlaceIds = (savedData ?? []).map((s) => s.google_place_id);
+
+  // Fetch saved park summaries for the activity feed (Redis cached)
+  const savedParks = savedPlaceIds.length > 0
+    ? (await Promise.all(savedPlaceIds.map(fetchParkByPlaceId)))
+        .filter(Boolean)
+        .map((p) => googleParkToSummary(p!))
+    : [];
 
   return (
     <div>
@@ -60,6 +68,9 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* Activity feed — check-in vibes + upcoming events */}
+      <ActivityFeed savedParks={savedParks} isLoggedIn={!!user} />
 
       {/* Parks grid — nearby via geolocation, falls back to featured Vancouver */}
       <NearbyParksSection featuredParks={displayParks} savedPlaceIds={savedPlaceIds} isLoggedIn={!!user} />
