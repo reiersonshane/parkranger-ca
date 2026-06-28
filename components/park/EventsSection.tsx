@@ -61,23 +61,29 @@ export function EventsSection({ placeId, initialEvents, isLoggedIn }: EventsSect
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!date || !time) { setError("Please pick a date and time."); return; }
+
+    const startsAt = new Date(`${date}T${time}`);
+    if (isNaN(startsAt.getTime())) { setError("Invalid date or time."); return; }
+
     setSubmitting(true);
     setError(null);
 
-    const startsAt = new Date(`${date}T${time}`).toISOString();
-
-    const res = await fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ parkId: placeId, title, description, startsAt, recurrence }),
-    });
-    const data = await res.json();
-
-    setSubmitting(false);
-    if (!res.ok) { setError(data.error); return; }
-
-    resetForm();
-    router.refresh();
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parkId: placeId, title, description, startsAt: startsAt.toISOString(), recurrence }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); return; }
+      resetForm();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   // Min date = today
