@@ -11,6 +11,7 @@ import { AmenityBadgeList } from "@/components/ui/AmenityBadge";
 import { PhotoGallery } from "@/components/park/PhotoGallery";
 import { HoursAccordion } from "@/components/park/HoursAccordion";
 import { CheckInSection } from "@/components/park/CheckInSection";
+import { EventsSection } from "@/components/park/EventsSection";
 
 export async function generateMetadata(
   props: PageProps<"/parks/[placeId]">
@@ -55,6 +56,17 @@ export default async function ParkDetailPage(
 
   const activeCheckins = checkins ?? [];
   const isCheckedIn = !!user && activeCheckins.some((c) => c.user_id === user.id);
+
+  // Fetch upcoming events
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { data: events } = await supabase
+    .from("events")
+    .select("id, title, description, starts_at, ends_at, recurrence, profiles(display_name, avatar_url)")
+    .eq("park_id", placeId)
+    .is("deleted_at", null)
+    .gt("starts_at", oneHourAgo)
+    .order("starts_at", { ascending: true })
+    .limit(20);
 
   // Build photo URLs server-side using the server key (browser key lacks Places API)
   const serverKey = process.env.GOOGLE_PLACES_API_KEY;
@@ -139,6 +151,13 @@ export default async function ParkDetailPage(
             </p>
           </div>
         )}
+
+        {/* Events */}
+        <EventsSection
+          placeId={placeId}
+          initialEvents={(events ?? []) as unknown as Parameters<typeof EventsSection>[0]["initialEvents"]}
+          isLoggedIn={!!user}
+        />
 
         {/* Divider */}
         <div className="h-px bg-meadow/20" />
