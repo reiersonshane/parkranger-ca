@@ -28,8 +28,11 @@ export async function POST(request: Request) {
   const { parkId } = await request.json();
   if (!parkId) return NextResponse.json({ error: "parkId required" }, { status: 400 });
 
-  // Ensure the park record exists (required for FK constraint)
-  await supabase.from("parks").upsert({ google_place_id: parkId, city: "Vancouver", province: "BC" }, { onConflict: "google_place_id", ignoreDuplicates: true });
+  // Best-effort park record (FK constraint removed — failure here is non-fatal)
+  await supabase.from("parks").upsert(
+    { google_place_id: parkId, city: "Vancouver", province: "BC" },
+    { onConflict: "google_place_id", ignoreDuplicates: true }
+  );
 
   // Check for an existing active checkin
   const { data: existing } = await supabase
