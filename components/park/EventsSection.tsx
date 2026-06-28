@@ -34,7 +34,6 @@ const RECURRENCE_LABELS = { none: null, daily: "Daily", weekly: "Weekly" };
 
 export function EventsSection({ placeId, initialEvents, isLoggedIn }: EventsSectionProps) {
   const router = useRouter();
-  const [events, setEvents] = useState<Event[]>(initialEvents);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -175,13 +174,13 @@ export function EventsSection({ placeId, initialEvents, isLoggedIn }: EventsSect
       )}
 
       {/* Events list */}
-      {events.length === 0 ? (
+      {initialEvents.length === 0 ? (
         <div className="text-center py-6 text-bark/40 font-body text-sm">
           Nothing planned yet — be the first to post an event!
         </div>
       ) : (
         <div className="space-y-3">
-          {events.map((event) => (
+          {initialEvents.map((event) => (
             <div key={event.id} className="rounded-2xl border border-meadow/20 bg-white p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
