@@ -31,10 +31,6 @@ export interface GooglePark {
   websiteUri?: string;
   nationalPhoneNumber?: string;
   amenities?: ParkAmenity[];
-  currentPopularityData?: {
-    currentPopularity: number; // 0–100, live busyness vs typical peak
-    fetchTime?: string;
-  };
 }
 
 // ─── Amenities ────────────────────────────────────────────────────────────────

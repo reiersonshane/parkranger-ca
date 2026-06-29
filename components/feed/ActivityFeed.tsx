@@ -125,9 +125,9 @@ export function ActivityFeed({ savedParks, isLoggedIn }: ActivityFeedProps) {
         <div className="mb-8">
           <h2 className="font-display text-xl font-bold text-bark mb-4">Happening now</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {checkinItems.map(({ parkId, checkinCount, googleBusyness }) => {
+            {checkinItems.map(({ parkId, checkinCount }) => {
               const park = parkMap[parkId];
-              const vibe = getParkVibe(checkinCount, googleBusyness);
+              const vibe = getParkVibe(checkinCount);
               return (
                 <Link
                   key={parkId}

@@ -13,8 +13,10 @@ import { cacheGet, cacheSet } from "@/lib/redis";
 
 const PLACES_BASE = "https://places.googleapis.com/v1";
 
-// Fields shared by both single and collection requests
-const BASE_FIELD_LIST = [
+// Fields we request — keeping this minimal to stay in free tier
+// Basic Data (free): displayName, id, types, formattedAddress, location
+// Advanced (billed): photos, rating, regularOpeningHours, editorialSummary
+const PLACE_FIELD_LIST = [
   "id",
   "displayName",
   "formattedAddress",
@@ -30,14 +32,10 @@ const BASE_FIELD_LIST = [
   "nationalPhoneNumber",
 ];
 
-// Single-place only: currentPopularityData is billed per place — too expensive for
-// collection calls that return up to 20 results at once.
-const SINGLE_FIELD_LIST = [...BASE_FIELD_LIST, "currentPopularityData"];
-
 // For single-place requests (GET /places/{id})
-const PLACE_FIELDS = SINGLE_FIELD_LIST.join(",");
+const PLACE_FIELDS = PLACE_FIELD_LIST.join(",");
 // For collection requests (searchNearby, searchText) each field needs the "places." prefix
-const COLLECTION_FIELDS = BASE_FIELD_LIST.map((f) => `places.${f}`).join(",");
+const COLLECTION_FIELDS = PLACE_FIELD_LIST.map((f) => `places.${f}`).join(",");
 
 function apiKey(): string {
   const key = process.env.GOOGLE_PLACES_API_KEY;
