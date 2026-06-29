@@ -55,5 +55,9 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Auto-RSVP the creator
+  await supabase.from("event_attendees").insert({ event_id: data.id, user_id: user.id });
+
   return NextResponse.json({ id: data.id });
 }

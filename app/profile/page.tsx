@@ -6,6 +6,7 @@ import { fetchParkByPlaceId, googleParkToSummary } from "@/lib/google/places";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { ParkCard } from "@/components/park/ParkCard";
 import { User, Calendar, RefreshCw } from "lucide-react";
+import { DeleteEventButton } from "@/components/park/DeleteEventButton";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -31,23 +32,26 @@ interface EventRow {
   event_attendees?: { user_id: string }[];
 }
 
-function EventCard({ event }: { event: EventRow }) {
+function EventCard({ event, deletable }: { event: EventRow; deletable?: boolean }) {
   return (
-    <Link
-      href={`/parks/${event.park_id}`}
-      className="flex items-start gap-3 p-3 rounded-xl bg-white border border-meadow/20 hover:border-meadow/50 hover:shadow-park transition-all"
-    >
-      <div className="h-8 w-8 rounded-lg bg-sun/20 flex items-center justify-center shrink-0">
-        <Calendar className="h-3.5 w-3.5 text-bark/60" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-body font-semibold text-bark text-sm leading-tight truncate">{event.title}</p>
-        <p className="font-body text-xs text-bark/50 mt-0.5">{formatEventDate(event.starts_at)}</p>
-      </div>
-      {event.recurrence !== "none" && (
-        <RefreshCw className="h-3 w-3 text-bark/30 shrink-0 mt-1" />
-      )}
-    </Link>
+    <div className="flex items-center gap-2">
+      <Link
+        href={`/parks/${event.park_id}`}
+        className="flex items-start gap-3 p-3 rounded-xl bg-white border border-meadow/20 hover:border-meadow/50 hover:shadow-park transition-all flex-1 min-w-0"
+      >
+        <div className="h-8 w-8 rounded-lg bg-sun/20 flex items-center justify-center shrink-0">
+          <Calendar className="h-3.5 w-3.5 text-bark/60" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-body font-semibold text-bark text-sm leading-tight truncate">{event.title}</p>
+          <p className="font-body text-xs text-bark/50 mt-0.5">{formatEventDate(event.starts_at)}</p>
+        </div>
+        {event.recurrence !== "none" && (
+          <RefreshCw className="h-3 w-3 text-bark/30 shrink-0 mt-1" />
+        )}
+      </Link>
+      {deletable && <DeleteEventButton eventId={event.id} />}
+    </div>
   );
 }
 
@@ -133,7 +137,7 @@ export default async function ProfilePage() {
           <EmptyState text="No events created yet — post one from any park page." />
         ) : (
           <div className="space-y-2">
-            {hostedEvents.map((event) => <EventCard key={event.id} event={event} />)}
+            {hostedEvents.map((event) => <EventCard key={event.id} event={event} deletable />)}
           </div>
         )}
       </div>
