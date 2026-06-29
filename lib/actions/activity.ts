@@ -1,10 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { fetchParkByPlaceId } from "@/lib/google/places";
 
 export interface ParkActivity {
   parkId: string;
   checkinCount: number;
+  googleBusyness?: number;
 }
 
 export interface UpcomingEvent {
@@ -27,7 +29,8 @@ export async function getActivityForParks(parkIds: string[]): Promise<ActivityDa
   const now = new Date().toISOString();
   const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: checkins }, { data: events }] = await Promise.all([
+  // Fetch Supabase data + Google busyness (Redis-cached) in parallel
+  const [{ data: checkins }, { data: events }, googleParks] = await Promise.all([
     supabase
       .from("checkins")
       .select("park_id")
@@ -42,7 +45,16 @@ export async function getActivityForParks(parkIds: string[]): Promise<ActivityDa
       .lt("starts_at", weekFromNow)
       .order("starts_at", { ascending: true })
       .limit(10),
+    Promise.all(parkIds.map(fetchParkByPlaceId)),
   ]);
+
+  // Build a busyness map from the Google results (all Redis-cached)
+  const busynessMap: Record<string, number> = {};
+  for (const park of googleParks) {
+    if (park?.currentPopularityData) {
+      busynessMap[park.id] = park.currentPopularityData.currentPopularity;
+    }
+  }
 
   // Count check-ins per park
   const countMap: Record<string, number> = {};
@@ -53,6 +65,7 @@ export async function getActivityForParks(parkIds: string[]): Promise<ActivityDa
   const checkinActivity: ParkActivity[] = parkIds.map((id) => ({
     parkId: id,
     checkinCount: countMap[id] ?? 0,
+    googleBusyness: busynessMap[id],
   }));
 
   const upcomingEvents: UpcomingEvent[] = (events ?? []).map((e) => ({

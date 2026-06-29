@@ -7,6 +7,7 @@ import { fetchParkByPlaceId } from "@/lib/google/places";
 import { buildPhotoUrl } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { StarRating } from "@/components/ui/StarRating";
+import { getBusynessLabel } from "@/lib/utils/vibes";
 import { AmenityBadgeList } from "@/components/ui/AmenityBadge";
 import { PhotoGallery } from "@/components/park/PhotoGallery";
 import { HoursAccordion } from "@/components/park/HoursAccordion";
@@ -120,6 +121,23 @@ export default async function ParkDetailPage(
               <ExternalLink className="h-3 w-3" />
             </a>
           </div>
+
+          {/* Live busyness from Google */}
+          {park.currentPopularityData && (() => {
+            const score = park.currentPopularityData.currentPopularity;
+            const { text, color } = getBusynessLabel(score);
+            return (
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex-1 h-1.5 bg-meadow/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-leaf rounded-full transition-all"
+                    style={{ width: `${score}%` }}
+                  />
+                </div>
+                <span className={`font-body text-xs font-medium shrink-0 ${color}`}>{text}</span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Address */}
