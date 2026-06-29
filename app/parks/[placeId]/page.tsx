@@ -10,7 +10,6 @@ import { StarRating } from "@/components/ui/StarRating";
 import { AmenityBadgeList } from "@/components/ui/AmenityBadge";
 import { PhotoGallery } from "@/components/park/PhotoGallery";
 import { HoursAccordion } from "@/components/park/HoursAccordion";
-import { CheckInSection } from "@/components/park/CheckInSection";
 import { EventsSection } from "@/components/park/EventsSection";
 import { SaveButton } from "@/components/park/SaveButton";
 
@@ -46,17 +45,7 @@ export default async function ParkDetailPage(
 
   const hours = park.currentOpeningHours ?? park.regularOpeningHours;
 
-  // Fetch active checkins + current user in parallel
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: checkins } = await supabase
-    .from("checkins")
-    .select("id, user_id, profiles(display_name, avatar_url)")
-    .eq("park_id", placeId)
-    .gt("expires_at", new Date().toISOString())
-    .order("created_at", { ascending: false });
-
-  const activeCheckins = checkins ?? [];
-  const isCheckedIn = !!user && activeCheckins.some((c) => c.user_id === user.id);
 
   const { data: savedData } = user
     ? await supabase.from("saved_parks").select("google_place_id").eq("user_id", user.id).eq("google_place_id", placeId).maybeSingle()
@@ -67,7 +56,7 @@ export default async function ParkDetailPage(
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { data: eventsRaw } = await supabase
     .from("events")
-    .select("id, title, description, starts_at, ends_at, recurrence, created_by, profiles(display_name, avatar_url), event_attendees(user_id)")
+    .select("id, title, description, starts_at, ends_at, recurrence, created_by, profiles(display_name, avatar_url), event_attendees(user_id, arrived_at)")
     .eq("park_id", placeId)
     .is("deleted_at", null)
     .gt("starts_at", oneHourAgo)
@@ -78,6 +67,8 @@ export default async function ParkDetailPage(
     ...e,
     attendeeCount: e.event_attendees?.length ?? 0,
     isAttending: !!user && (e.event_attendees ?? []).some((a) => a.user_id === user.id),
+    arrivedCount: (e.event_attendees ?? []).filter((a) => a.arrived_at).length,
+    isArrived: !!user && (e.event_attendees ?? []).some((a) => a.user_id === user.id && a.arrived_at),
   }));
 
   // Build photo URLs server-side using the server key (browser key lacks Places API)
@@ -134,14 +125,6 @@ export default async function ParkDetailPage(
           <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-bark/40" />
           <p className="font-body text-sm">{park.formattedAddress}</p>
         </div>
-
-        {/* Check-in */}
-        <CheckInSection
-          placeId={placeId}
-          initialCheckins={activeCheckins as unknown as Parameters<typeof CheckInSection>[0]["initialCheckins"]}
-          initialIsCheckedIn={isCheckedIn}
-          isLoggedIn={!!user}
-        />
 
         {/* Hours */}
         {hours && <HoursAccordion hours={hours} />}

@@ -78,7 +78,7 @@ export default async function ProfilePage() {
   ] = await Promise.all([
     supabase.from("saved_parks").select("google_place_id").eq("user_id", user.id).order("saved_at", { ascending: false }).limit(12),
     supabase.from("events").select("id, title, starts_at, park_id, recurrence, event_attendees(user_id)").eq("created_by", user.id).is("deleted_at", null).order("starts_at", { ascending: false }).limit(20),
-    supabase.from("event_attendees").select("event_id, events!inner(id, title, starts_at, park_id, recurrence, deleted_at)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(30),
+    supabase.from("event_attendees").select("event_id, arrived_at, events!inner(id, title, starts_at, park_id, recurrence, deleted_at)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(30),
   ]);
 
   const savedPlaceIds = (savedData ?? []).map((s) => s.google_place_id);
@@ -89,11 +89,11 @@ export default async function ProfilePage() {
   const hostedEvents: EventRow[] = (hostedData ?? []) as EventRow[];
 
   // Split RSVP'd events into upcoming and past, filtering soft-deleted
-  const rsvpEvents = (rsvpData ?? [])
-    .map((r) => r.events as unknown as EventRow & { deleted_at: string | null })
-    .filter((e) => e && !e.deleted_at);
-  const goingEvents = rsvpEvents.filter((e) => e.starts_at > now);
-  const beenThereEvents = rsvpEvents.filter((e) => e.starts_at <= now);
+  const rsvpRows = (rsvpData ?? []) as unknown as { arrived_at: string | null; events: EventRow & { deleted_at: string | null } }[];
+  const activeRsvps = rsvpRows.filter((r) => r.events && !r.events.deleted_at);
+  const goingEvents = activeRsvps.filter((r) => r.events.starts_at > now).map((r) => r.events);
+  // Been there = actually arrived at a past event
+  const beenThereEvents = activeRsvps.filter((r) => r.arrived_at && r.events.starts_at <= now).map((r) => r.events);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">

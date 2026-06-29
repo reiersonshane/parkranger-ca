@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Users } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StarRating } from "@/components/ui/StarRating";
 import { AmenityBadgeList } from "@/components/ui/AmenityBadge";
@@ -78,12 +78,6 @@ export function ParkCard({ park, variant = "default", isSaved = false, isLoggedI
                 {park.isOpen ? "Open now" : "Closed"}
               </span>
             )}
-            {park.checkinCount !== undefined && park.checkinCount > 0 && (
-              <span className="flex items-center gap-1 text-xs text-canopy font-medium">
-                <Users className="h-3 w-3" />
-                {park.checkinCount} here
-              </span>
-            )}
           </div>
           <AmenityBadgeList amenities={park.amenities} max={3} size="sm" className="mt-2" />
         </div>
@@ -121,13 +115,7 @@ export function ParkCard({ park, variant = "default", isSaved = false, isLoggedI
             {park.isOpen ? "Open now" : "Closed"}
           </div>
         )}
-        <div className="absolute top-3 right-3 flex items-center gap-1.5">
-          {park.checkinCount !== undefined && park.checkinCount > 0 && (
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-sun/90 text-bark text-xs font-semibold">
-              <Users className="h-3 w-3" />
-              {park.checkinCount}
-            </div>
-          )}
+        <div className="absolute top-3 right-3">
           <SaveButton placeId={park.placeId} initialIsSaved={isSaved} isLoggedIn={isLoggedIn} size="sm" />
         </div>
       </div>

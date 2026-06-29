@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export interface ParkActivity {
   parkId: string;
-  checkinCount: number;
+  arrivedCount: number;
 }
 
 export interface UpcomingEvent {
@@ -16,45 +16,52 @@ export interface UpcomingEvent {
 }
 
 export interface ActivityData {
-  checkins: ParkActivity[];
+  activity: ParkActivity[];
   events: UpcomingEvent[];
 }
 
 export async function getActivityForParks(parkIds: string[]): Promise<ActivityData> {
-  if (parkIds.length === 0) return { checkins: [], events: [] };
+  if (parkIds.length === 0) return { activity: [], events: [] };
 
   const supabase = await createClient();
-  const now = new Date().toISOString();
-  const weekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const now = new Date();
+  const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
+  const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString();
+  const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: checkins }, { data: events }] = await Promise.all([
+  const [{ data: activeEvents }, { data: upcomingEventsData }] = await Promise.all([
+    // Events currently in (or approaching) check-in window
     supabase
-      .from("checkins")
-      .select("park_id")
+      .from("events")
+      .select("id, park_id, event_attendees(arrived_at)")
       .in("park_id", parkIds)
-      .gt("expires_at", now),
+      .lte("starts_at", twoHoursFromNow)
+      .gt("starts_at", threeHoursAgo),
+    // Upcoming events this week
     supabase
       .from("events")
       .select("id, park_id, title, starts_at, recurrence")
       .in("park_id", parkIds)
       .is("deleted_at", null)
-      .gt("starts_at", now)
+      .gt("starts_at", now.toISOString())
       .lt("starts_at", weekFromNow)
       .order("starts_at", { ascending: true })
       .limit(10),
   ]);
 
-  const countMap: Record<string, number> = {};
-  for (const c of checkins ?? []) {
-    countMap[c.park_id] = (countMap[c.park_id] ?? 0) + 1;
+  // Sum arrived counts per park from active events
+  const arrivedMap: Record<string, number> = {};
+  for (const event of activeEvents ?? []) {
+    const arrived = (event.event_attendees ?? []).filter((a: { arrived_at: string | null }) => a.arrived_at).length;
+    arrivedMap[event.park_id] = (arrivedMap[event.park_id] ?? 0) + arrived;
   }
 
-  const checkinActivity: ParkActivity[] = parkIds.map((id) => ({
+  const activity: ParkActivity[] = parkIds.map((id) => ({
     parkId: id,
-    checkinCount: countMap[id] ?? 0,
+    arrivedCount: arrivedMap[id] ?? 0,
   }));
 
-  const upcomingEvents: UpcomingEvent[] = (events ?? []).map((e) => ({
+  const events: UpcomingEvent[] = (upcomingEventsData ?? []).map((e) => ({
     id: e.id,
     parkId: e.park_id,
     title: e.title,
@@ -62,5 +69,5 @@ export async function getActivityForParks(parkIds: string[]): Promise<ActivityDa
     recurrence: e.recurrence,
   }));
 
-  return { checkins: checkinActivity, events: upcomingEvents };
+  return { activity, events };
 }

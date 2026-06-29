@@ -7,7 +7,7 @@ import { getNearbyParksAction } from "@/lib/actions/search";
 import { getActivityForParks } from "@/lib/actions/activity";
 import { getParkVibe } from "@/lib/utils/vibes";
 import type { ParkSummary } from "@/types";
-import type { ActivityData } from "@/lib/actions/activity";
+import type { ActivityData, ParkActivity } from "@/lib/actions/activity";
 
 interface ActivityFeedProps {
   savedParks: ParkSummary[];
@@ -87,17 +87,16 @@ export function ActivityFeed({ savedParks, isLoggedIn }: ActivityFeedProps) {
   const allParks = mergeParks(nearbyParks, savedParks);
   const parkMap = Object.fromEntries(allParks.map((p) => [p.placeId, p]));
 
-  // Attach park names to activity data
-  const checkinItems = (activity?.checkins ?? [])
-    .filter((c) => parkMap[c.parkId])
-    .sort((a, b) => b.checkinCount - a.checkinCount)
+  const activityItems = (activity?.activity ?? [])
+    .filter((a: ParkActivity) => parkMap[a.parkId] && a.arrivedCount > 0)
+    .sort((a: ParkActivity, b: ParkActivity) => b.arrivedCount - a.arrivedCount)
     .slice(0, 4);
 
   const eventItems = (activity?.events ?? [])
     .filter((e) => parkMap[e.parkId])
     .slice(0, 4);
 
-  const hasContent = checkinItems.length > 0 || eventItems.length > 0;
+  const hasContent = activityItems.length > 0 || eventItems.length > 0;
   const isWaiting = locationState === "requesting" || loading;
 
   // Don't render anything until we know what to show
@@ -121,13 +120,13 @@ export function ActivityFeed({ savedParks, isLoggedIn }: ActivityFeedProps) {
         </div>
       )}
 
-      {checkinItems.length > 0 && (
+      {activityItems.length > 0 && (
         <div className="mb-8">
           <h2 className="font-display text-xl font-bold text-bark mb-4">Happening now</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {checkinItems.map(({ parkId, checkinCount }) => {
+            {activityItems.map(({ parkId, arrivedCount }: ParkActivity) => {
               const park = parkMap[parkId];
-              const vibe = getParkVibe(checkinCount);
+              const vibe = getParkVibe(arrivedCount);
               return (
                 <Link
                   key={parkId}
