@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
 
-// DELETE /api/events/[id] — soft-delete an event (creator only)
+// DELETE /api/events/[id] — hard delete (creator only); attendees cascade
 export async function DELETE(
   _request: NextRequest,
   props: { params: Promise<{ id: string }> }
@@ -13,7 +13,7 @@ export async function DELETE(
 
   const { error } = await supabase
     .from("events")
-    .update({ deleted_at: new Date().toISOString() })
+    .delete()
     .eq("id", id)
     .eq("created_by", user.id);
 
