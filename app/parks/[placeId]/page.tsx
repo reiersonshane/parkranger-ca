@@ -64,16 +64,22 @@ export default async function ParkDetailPage(
     : { data: null };
   const isSaved = !!savedData;
 
-  // Fetch upcoming events
+  // Fetch upcoming events with attendee data
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const { data: events } = await supabase
+  const { data: eventsRaw } = await supabase
     .from("events")
-    .select("id, title, description, starts_at, ends_at, recurrence, profiles(display_name, avatar_url)")
+    .select("id, title, description, starts_at, ends_at, recurrence, created_by, profiles(display_name, avatar_url), event_attendees(user_id)")
     .eq("park_id", placeId)
     .is("deleted_at", null)
     .gt("starts_at", oneHourAgo)
     .order("starts_at", { ascending: true })
     .limit(20);
+
+  const events = (eventsRaw ?? []).map((e) => ({
+    ...e,
+    attendeeCount: e.event_attendees?.length ?? 0,
+    isAttending: !!user && (e.event_attendees ?? []).some((a) => a.user_id === user.id),
+  }));
 
   // Build photo URLs server-side using the server key (browser key lacks Places API)
   const serverKey = process.env.GOOGLE_PLACES_API_KEY;
@@ -182,8 +188,9 @@ export default async function ParkDetailPage(
         {/* Events */}
         <EventsSection
           placeId={placeId}
-          initialEvents={(events ?? []) as unknown as Parameters<typeof EventsSection>[0]["initialEvents"]}
+          initialEvents={events as unknown as Parameters<typeof EventsSection>[0]["initialEvents"]}
           isLoggedIn={!!user}
+          currentUserId={user?.id}
         />
 
         {/* Divider */}
